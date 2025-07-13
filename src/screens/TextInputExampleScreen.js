@@ -1,14 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 
 const TextInputExampleScreen = () => {
   const [name, setName] = useState('');
   const [comment, setComment] = useState('');
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Simulate activity when any input changes
+  useEffect(() => {
+    if (name || email || comment) {
+      setIsLoading(true);
+      const timer = setTimeout(() => setIsLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [name, email, comment]);
 
   return (
     <ScrollView style={styles.container}>
-
+      {/* Optional Spinner */}
+      {isLoading && (
+        <View style={styles.spinner}>
+          <ActivityIndicator size="large" color="dodgerblue" />
+          <Text style={styles.spinnerText}>Saving changes...</Text>
+        </View>
+      )}
 
       {/* 1. Basic Input */}
       <Text style={styles.label}>1️ Name :</Text>
@@ -62,17 +85,25 @@ const TextInputExampleScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white', padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
   label: { fontSize: 16, fontWeight: '600', marginTop: 16 },
   input: {
     borderWidth: 1,
-    borderColor: 'lightgray',  
+    borderColor: 'lightgray',
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
-    backgroundColor: 'whitesmoke', 
+    backgroundColor: 'whitesmoke',
+  },
+  spinner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  spinnerText: {
+    marginLeft: 10,
+    color: 'gray',
+    fontSize: 14,
   },
 });
-
 
 export default TextInputExampleScreen;

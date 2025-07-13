@@ -2,36 +2,33 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   StyleSheet,
-  TouchableOpacity,
-  Alert,
+  Image,
+  TouchableHighlight,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 
 const ProductCard = ({ product }) => {
-  const navigation = useNavigation();
-
   const handlePurchase = () => {
-    Alert.alert('Purchased!', `${product.name} added to your cart.`);
+    alert(`Purchased: ${product.name}`);
   };
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('ProductDetail', { product })}
-    >
+    <View style={styles.card}>
       <Image source={{ uri: product.image }} style={styles.image} />
 
       <View style={styles.infoSection}>
         <Text style={styles.name}>{product.name}</Text>
-        <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+        <Text style={styles.price}>${product.price}</Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handlePurchase}>
+      <TouchableHighlight
+        style={styles.button}
+        onPress={handlePurchase}
+        underlayColor="#1565C0"
+      >
         <Text style={styles.buttonText}>PURCHASE</Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
+      </TouchableHighlight>
+    </View>
   );
 };
 

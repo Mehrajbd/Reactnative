@@ -1,7 +1,30 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 
 const ScrollExamplesScreen = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2000); // Simulate 2s loading
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="dodgerblue" />
+        <Text style={{ marginTop: 10 }}>Loading content...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>ScrollView Examples</Text>
@@ -39,7 +62,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: 'white', 
+    backgroundColor: 'white',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 22,
@@ -65,7 +93,7 @@ const styles = StyleSheet.create({
   box: {
     width: 120,
     height: 80,
-    backgroundColor: 'lightgray', 
+    backgroundColor: 'lightgray',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -76,7 +104,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   listItem: {
-    backgroundColor: 'gainsboro', 
+    backgroundColor: 'gainsboro',
     padding: 12,
     borderRadius: 8,
     marginVertical: 5,
