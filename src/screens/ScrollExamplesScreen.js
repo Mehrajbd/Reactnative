@@ -4,7 +4,6 @@ import { View, Text, ScrollView, StyleSheet, Image } from 'react-native';
 const ScrollExamplesScreen = () => {
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>ScrollView Examples</Text>
 
       <Text style={styles.section}>1️ Simple Text</Text>
       <Text style={styles.item}>This is a simple scrollable text block.</Text>

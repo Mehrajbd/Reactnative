@@ -1,40 +1,45 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet, SafeAreaView } from 'react-native';
-
-const concepts = [
-  { id: '1', title: 'FlatList with Card UI' },
-  { id: '2', title: 'ScrollView Example' },
-  { id: '3', title: 'TextInput Handling' },
-  { id: '4', title: 'SectionList Example' },
-  { id: '5', title: 'RefreshControl in FlatList' },
-  { id: '6', title: 'StatusBar Customization' },
-  { id: '7', title: 'Navigation Between Screens' },
-  { id: '8', title: 'Button Row with Equal Width' },
-  { id: '9', title: 'Concepts Screen Design' },
-];
+import { concepts } from '../utils/concepts';
 
 const ConceptListScreen = () => {
+  const groupedByDay = concepts.reduce((acc, concept) => {
+    const dayKey = `Day ${concept.day}`;
+    if (!acc[dayKey]) acc[dayKey] = [];
+    acc[dayKey].push(concept);
+    return acc;
+  }, {});
+
+  const renderDay = (day, items) => (
+    <View key={day}>
+      <Text style={styles.dayHeader}>{day}</Text>
+      {items.map((item) => (
+        <View key={item.id} style={styles.card}>
+          <Text style={styles.text}>{item.title}</Text>
+        </View>
+      ))}
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Learned Concepts</Text>
       <FlatList
-        data={concepts}
-        keyExtractor={(item) => item.id}
+        data={Object.entries(groupedByDay)}
+        keyExtractor={([day]) => day}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.text}>{item.title}</Text>
-          </View>
-        )}
+        renderItem={({ item: [day, items] }) => renderDay(day, items)}
       />
     </SafeAreaView>
   );
 };
 
+export default ConceptListScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'aliceblue', 
+    backgroundColor: 'aliceblue',
     paddingTop: 10,
   },
   title: {
@@ -42,13 +47,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     alignSelf: 'center',
     marginVertical: 10,
-    color: 'dodgerblue', 
+    color: 'dodgerblue',
+  },
+  dayHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+    color: 'darkblue',
   },
   list: {
     paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   card: {
-    backgroundColor: 'white', 
+    backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
@@ -56,8 +69,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    color: 'darkslategray', 
+    color: 'darkslategray',
   },
 });
-
-export default ConceptListScreen;

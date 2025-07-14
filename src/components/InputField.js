@@ -31,11 +31,12 @@ const InputField = ({
 
         {showToggle && (
           <TouchableOpacity onPress={onTogglePress} style={styles.icon}>
-            <Icon
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={22}
-              color="gray"
-            />
+        <Icon
+  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+  size={22}
+  color="gray"
+/>
+
           </TouchableOpacity>
         )}
       </View>

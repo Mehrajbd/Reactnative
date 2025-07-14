@@ -8,75 +8,72 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import InputField from '../components/InputField';
+import { Picker } from '@react-native-picker/picker';
 
 const SignInScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [contact, setContact] = useState('');
-  const [address, setAddress] = useState('');
+  const [role, setRole] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isRegistering, setIsRegistering] = useState(false); // 🌀 loading state
 
   const refs = {
     fullName: useRef(null),
-    username: useRef(null),
     email: useRef(null),
     password: useRef(null),
     confirmPassword: useRef(null),
-    contact: useRef(null),
-    address: useRef(null),
   };
 
-const validate = () => {
-  const newErrors = {};
-  const emailRegex = /^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const validate = () => {
+    const newErrors = {};
+    const emailRegex = /^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-  if (!fullName.trim()) newErrors.fullName = 'Full Name is required';
-  if (!username.trim()) newErrors.username = 'Username is required';
-  if (!email.trim()) newErrors.email = 'Email is required';
-  else if (!emailRegex.test(email.trim())) newErrors.email = 'Invalid email format';
-  if (!password) newErrors.password = 'Password is required';
-  if (!confirmPassword) newErrors.confirmPassword = 'Confirm Password is required';
-  if (password && confirmPassword && password !== confirmPassword)
-    newErrors.confirmPassword = 'Passwords do not match';
-  if (!contact.trim()) newErrors.contact = 'Contact number is required';
-else if (!/^[0-9]{11}$/.test(contact)) newErrors.contact = 'Invalid contact number';
+    if (!fullName.trim()) newErrors.fullName = 'Full Name is required';
+    if (!email.trim()) newErrors.email = 'Email is required';
+    else if (!emailRegex.test(email.trim())) newErrors.email = 'Invalid email format';
+    if (!password) newErrors.password = 'Password is required';
+    if (!confirmPassword) newErrors.confirmPassword = 'Confirm Password is required';
+    if (password && confirmPassword && password !== confirmPassword)
+      newErrors.confirmPassword = 'Passwords do not match';
+    if (!role) newErrors.role = 'Role is required';
 
-  if (!address.trim()) newErrors.address = 'Address is required';
+    return newErrors;
+  };
 
-  return newErrors;
-};
+  const handleSignIn = async () => {
+    const validationErrors = validate();
+    setErrors(validationErrors);
 
+    if (Object.keys(validationErrors).length > 0) {
+      const firstErrorField = Object.keys(validationErrors)[0];
+      refs[firstErrorField]?.current?.focus();
+      return;
+    }
 
-const handleSignIn = async () => {
-  const validationErrors = validate();
-  setErrors(validationErrors);
+    try {
+      setIsRegistering(true); // 🌀 show loading
+      const cleanedEmail = email.trim().toLowerCase();
+      await AsyncStorage.setItem('temp_email', cleanedEmail);
+      await AsyncStorage.setItem('temp_password', password);
+      await AsyncStorage.setItem('temp_role', role);
 
-  if (Object.keys(validationErrors).length > 0) {
-    const firstErrorField = Object.keys(validationErrors)[0];
-    refs[firstErrorField]?.current?.focus();
-    return;
-  }
-
-  try {
-    const cleanedEmail = email.trim().toLowerCase();
-    const user = { email: cleanedEmail, password };
-    await AsyncStorage.setItem('signedInUser', JSON.stringify(user));
-    Alert.alert('Success', 'Sign In Successful!', [
-      { text: 'OK', onPress: () => navigation.replace('SignUp') },
-    ]);
-  } catch (err) {
-    Alert.alert('Error', 'Failed to save user data');
-  }
-};
-
+      setTimeout(() => {
+        setIsRegistering(false);
+        navigation.replace('SignUp');
+      }, 1000);
+    } catch (err) {
+      setIsRegistering(false);
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -84,8 +81,6 @@ const handleSignIn = async () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>Sign In</Text>
-
         <InputField
           label="Full Name"
           placeholder="Full Name"
@@ -93,14 +88,6 @@ const handleSignIn = async () => {
           onChangeText={setFullName}
           error={errors.fullName}
           inputRef={refs.fullName}
-        />
-        <InputField
-          label="Username"
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          error={errors.username}
-          inputRef={refs.username}
         />
         <InputField
           label="Email"
@@ -134,26 +121,44 @@ const handleSignIn = async () => {
           error={errors.confirmPassword}
           inputRef={refs.confirmPassword}
         />
-        <InputField
-          label="Contact Number"
-          placeholder="Contact Number"
-          value={contact}
-          onChangeText={setContact}
-          error={errors.contact}
-          inputRef={refs.contact}
-        />
-        <InputField
-          label="Address"
-          placeholder="Address"
-          value={address}
-          onChangeText={setAddress}
-          error={errors.address}
-          inputRef={refs.address}
-        />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
+        <Text style={styles.label}>Select Role</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={role}
+            onValueChange={(itemValue) => setRole(itemValue)}
+            style={styles.picker}
+            dropdownIconColor="black"
+          >
+            <Picker.Item label="Select a role" value="" />
+            <Picker.Item label="Buyer" value="buyer" />
+            <Picker.Item label="Seller" value="seller" />
+          </Picker>
+        </View>
+        {errors.role && <Text style={styles.errorText}>{errors.role}</Text>}
+
+        {isRegistering ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="dodgerblue" />
+            <Text style={styles.loadingText}>Registering...</Text>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+            <Text style={styles.buttonText}>Register</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.linkContainer}>
+          <Text style={styles.linkText}>
+            Already have an account?{' '}
+            <Text
+              style={styles.linkHighlight}
+              onPress={() => navigation.replace('SignUp')}
+            >
+              Log In
+            </Text>
+          </Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -169,13 +174,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: 'black',
-  },
   button: {
     backgroundColor: 'dodgerblue',
     padding: 14,
@@ -187,5 +185,54 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  linkHighlight: {
+    color: 'dodgerblue',
+    fontWeight: 'bold',
+  },
+  linkContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: 'gray',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  label: {
+    marginTop: 15,
+    marginBottom: 5,
+    fontSize: 16,
+    color: 'black',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 8,
+    marginBottom: 10,
+    overflow: 'hidden',
+    backgroundColor: '#f9f9f9',
+    justifyContent: 'center',
+    height: 50,
+  },
+  picker: {
+    color: 'black',
+    paddingHorizontal: 10,
+    height: 50,
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: 'gray',
   },
 });

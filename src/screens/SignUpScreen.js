@@ -1,6 +1,11 @@
-
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import InputField from '../components/InputField';
 import Button from '../components/Button';
@@ -10,59 +15,75 @@ const SignUpScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [tempEmail, setTempEmail] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // 🔄 loading state
+
+  useEffect(() => {
+    const loadTempCredentials = async () => {
+      const storedEmail = await AsyncStorage.getItem('temp_email');
+      const storedPassword = await AsyncStorage.getItem('temp_password');
+      if (storedEmail) setTempEmail(storedEmail);
+      if (storedPassword) setTempPassword(storedPassword);
+    };
+    loadTempCredentials();
+  }, []);
 
   const validate = () => {
     const newErrors = {};
-  const emailRegex = /^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
+    const emailRegex = /^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!email.trim()) newErrors.email = 'Email is required';
     else if (!emailRegex.test(email)) newErrors.email = 'Invalid email format';
-
     if (!password.trim()) newErrors.password = 'Password is required';
     return newErrors;
   };
 
-const handleSignUp = async () => {
-  const validationErrors = validate();
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    return;
-  }
-
-  try {
-    const saved = await AsyncStorage.getItem('signedInUser');
-    const signedInUser = saved ? JSON.parse(saved) : null;
-
-    if (
-      signedInUser &&
-      signedInUser.email === email &&
-      signedInUser.password === password
-    ) {
-      Alert.alert('Success', 'Sign Up Successful!', [
-        { text: 'OK', onPress: () => navigation.replace('Home') },
-      ]);
-    } else {
-      Alert.alert('Error', 'Invalid email or password.');
+  const handleSignUp = async () => {
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
-  } catch (err) {
-    Alert.alert('Error', 'Something went wrong!');
-  }
-};
 
+    if (email !== tempEmail || password !== tempPassword) {
+      Alert.alert('Failed', 'Email or Password does not match');
+      return;
+    }
+
+    try {
+      setIsLoading(true); // ⏳ Start loading
+
+      const user = { email, password };
+      await AsyncStorage.setItem('signedInUser', JSON.stringify(user));
+      await AsyncStorage.setItem('user_email', email);
+      await AsyncStorage.setItem('user_password', password);
+      await AsyncStorage.removeItem('temp_email');
+      await AsyncStorage.removeItem('temp_password');
+
+      setTimeout(() => {
+        setIsLoading(false); // ✅ Stop loading
+        Alert.alert('Success', 'Sign Up Successful!', [
+          { text: 'OK', onPress: () => navigation.replace('Home') },
+        ]);
+      }, 1000);
+    } catch (err) {
+      setIsLoading(false);
+      Alert.alert('Error', 'Something went wrong!');
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
-
       <InputField
-      label="Email"
+        label="Email"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         error={errors.email}
       />
+
       <InputField
-      label="Password"
+        label="Password"
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
@@ -73,7 +94,14 @@ const handleSignUp = async () => {
         error={errors.password}
       />
 
-      <Button title="Sign Up" onPress={handleSignUp} />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1E90FF" />
+          <Text style={styles.loadingText}>Logging in...</Text>
+        </View>
+      ) : (
+        <Button title="Log In" onPress={handleSignUp} />
+      )}
     </View>
   );
 };
@@ -87,11 +115,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: 'black',
+  loadingContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: 'gray',
   },
 });
