@@ -17,7 +17,7 @@ const SignUpScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [tempEmail, setTempEmail] = useState('');
   const [tempPassword, setTempPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // 🔄 loading state
+  const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
     const loadTempCredentials = async () => {
@@ -51,7 +51,7 @@ const SignUpScreen = ({ navigation }) => {
     }
 
     try {
-      setIsLoading(true); // ⏳ Start loading
+      setIsLoading(true); 
 
       const user = { email, password };
       await AsyncStorage.setItem('signedInUser', JSON.stringify(user));
@@ -61,7 +61,7 @@ const SignUpScreen = ({ navigation }) => {
       await AsyncStorage.removeItem('temp_password');
 
       setTimeout(() => {
-        setIsLoading(false); // ✅ Stop loading
+        setIsLoading(false); 
         Alert.alert('Success', 'Sign Up Successful!', [
           { text: 'OK', onPress: () => navigation.replace('Home') },
         ]);

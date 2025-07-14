@@ -38,8 +38,6 @@ const HomeScreen = () => {
         backgroundColor={darkMode ? '#000' : '#1E90FF'}
         barStyle={darkMode ? 'light-content' : 'dark-content'}
       />
-
-      {/* Top Bar with Title + Theme + Logout */}
       <View style={styles.headerRow}>
         <Text style={[styles.headerTitle, { color: darkMode ? 'white' : 'black' }]}>
           All Products
@@ -58,7 +56,7 @@ const HomeScreen = () => {
             />
           </View>
 
-          {/* 🔓 Logout Button */}
+          {/*  Logout Button */}
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>

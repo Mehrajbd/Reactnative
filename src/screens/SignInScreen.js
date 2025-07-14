@@ -23,7 +23,7 @@ const SignInScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
-  const [isRegistering, setIsRegistering] = useState(false); // 🌀 loading state
+  const [isRegistering, setIsRegistering] = useState(false); 
 
   const refs = {
     fullName: useRef(null),
@@ -59,7 +59,7 @@ const SignInScreen = ({ navigation }) => {
     }
 
     try {
-      setIsRegistering(true); // 🌀 show loading
+      setIsRegistering(true); 
       const cleanedEmail = email.trim().toLowerCase();
       await AsyncStorage.setItem('temp_email', cleanedEmail);
       await AsyncStorage.setItem('temp_password', password);
