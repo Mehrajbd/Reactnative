@@ -1,9 +1,17 @@
 import React from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
-const App = () => {
+import { CartProvider } from './src/context/CartContext';
+import Toast from 'react-native-toast-message'; // ✅ Import toast
 
-  
-  return <AppNavigator />;
+const App = () => {
+  return (
+    <CartProvider>
+      <>
+        <AppNavigator />
+        <Toast /> {/* ✅ Toast component added here */}
+      </>
+    </CartProvider>
+  );
 };
 
 export default App;

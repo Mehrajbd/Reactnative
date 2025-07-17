@@ -1,41 +1,89 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Screens
+import RegisterScreen from '../screens/RegisterScreen';
+import LogInScreen from '../screens/LogInScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
-import ScrollExamplesScreen from '../screens/ScrollExamplesScreen';
-import TextInputExampleScreen from '../screens/TextInputExampleScreen';
-import SectionListExample  from '../screens/SectionListExample';
-import ConceptListScreen from '../screens/ConceptListScreen';
+import CartScreen from '../screens/CartScreen';
+
+// Cart Icon
+import CartIcon from '../components/CartIcon';
 
 const Stack = createNativeStackNavigator();
-const AppNavigator = () => (
-  <NavigationContainer>
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
-        options={({ navigation }) => ({
-          title: 'All Products',
-          headerTitleAlign: 'center',
-        })}
-      />
-      <Stack.Screen
-        name="ProductDetail"
-        component={ProductDetailScreen}
-        options={{ title: 'Product Detail' }}
-      />
-  <Stack.Screen name="ScrollExamples" component={ScrollExamplesScreen} options={{ title: 'Scroll Examples' }} />
-  <Stack.Screen
-  name="TextInputExample"
-  component={TextInputExampleScreen}
-  options={{ title: 'Text Input Example' }}
-/>
-<Stack.Screen name="SectionListExample" component={SectionListExample} />
 
-<Stack.Screen name="ConceptListScreen" component={ConceptListScreen} />
-    </Stack.Navigator>
-  </NavigationContainer>
-);
+const AppNavigator = () => {
+  const [initialRoute, setInitialRoute] = useState(null);
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const user = await AsyncStorage.getItem('signedInUser');
+        if (user) {
+          setInitialRoute('Home');
+        } else {
+          setInitialRoute('Login');
+        }
+      } catch (err) {
+        console.error('Login check failed:', err);
+        setInitialRoute('Login');
+      }
+    };
+
+    checkLogin();
+  }, []);
+
+  if (!initialRoute) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#1E90FF" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName={initialRoute}>
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{ title: 'Welcome To SwiftCart', headerTitleAlign: 'center' }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LogInScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            headerTitle: '',
+            headerRight: () => <CartIcon />,
+            headerRightContainerStyle: { marginRight: 15 },
+          }}
+        />
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetailScreen}
+          options={{
+            title: 'Product Detail',
+            headerRight: () => <CartIcon />,
+            headerRightContainerStyle: { marginRight: 15 },
+          }}
+        />
+        <Stack.Screen
+          name="Cart"
+          component={CartScreen}
+          options={{ title: 'Your Cart' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
 export default AppNavigator;

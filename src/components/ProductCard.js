@@ -12,10 +12,6 @@ import { useNavigation } from '@react-navigation/native';
 const ProductCard = ({ product }) => {
   const navigation = useNavigation();
 
-  const handlePurchase = () => {
-    Alert.alert('Purchased!', `${product.name} added to your cart.`);
-  };
-
   return (
     <TouchableOpacity
       style={styles.card}
@@ -27,10 +23,6 @@ const ProductCard = ({ product }) => {
         <Text style={styles.name}>{product.name}</Text>
         <Text style={styles.price}>${product.price.toFixed(2)}</Text>
       </View>
-
-      <TouchableOpacity style={styles.button} onPress={handlePurchase}>
-        <Text style={styles.buttonText}>PURCHASE</Text>
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 };
