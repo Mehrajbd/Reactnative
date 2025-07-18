@@ -1,20 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  FlatList,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  RefreshControl,
-  StatusBar,
-  Switch,
-  Alert,
-} from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import ProductCard from '../components/ProductCard';
 import { getAllProducts } from '../api/productApi';
-import { logoutUser } from '../api/authApi';
+
+import HeaderWithThemeSwitch from '../components/Home/HeaderWithThemeSwitch';
+import ProductGrid from '../components/Home/ProductGrid';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -27,7 +17,7 @@ const HomeScreen = () => {
       const data = await getAllProducts();
       setProducts(data);
     } catch (error) {
-      console.error(' Failed to load products:', error);
+      console.error('Failed to load products:', error);
     }
   };
 
@@ -43,18 +33,6 @@ const HomeScreen = () => {
   const toggleTheme = () => setDarkMode(!darkMode);
   const themeStyles = darkMode ? darkStyles : lightStyles;
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser(); 
-      Alert.alert('Logged Out', 'You have been logged out.');
-      navigation.replace('Login');
-
-    } catch (error) {
-      console.error(' Logout error:', error);
-      Alert.alert('Logout Failed', error?.response?.data?.message || error.message);
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.container, themeStyles.container]}>
       <StatusBar
@@ -62,82 +40,18 @@ const HomeScreen = () => {
         barStyle={darkMode ? 'light-content' : 'dark-content'}
       />
 
-      <View style={styles.headerRow}>
-        <Text style={[styles.headerTitle, { color: darkMode ? 'white' : 'black' }]}>
-          All Products
-        </Text>
+      <HeaderWithThemeSwitch darkMode={darkMode} toggleTheme={toggleTheme} />
 
-        <View style={styles.topRight}>
-          <View style={styles.switchContainer}>
-            <Text style={{ color: darkMode ? 'white' : 'black', marginRight: 8 }}>
-              {darkMode ? 'Dark' : 'Light'}
-            </Text>
-            <Switch
-              value={darkMode}
-              onValueChange={toggleTheme}
-              thumbColor={darkMode ? '#f5dd4b' : '#f4f3f4'}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-            />
-          </View>
-
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <FlatList
-        data={products}
-        keyExtractor={(item) => item._id}
-        numColumns={2}
-        renderItem={({ item }) => <ProductCard product={item} navigation={navigation} />}
-        contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.row}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      />
+      <ProductGrid products={products}  refreshing={refreshing}  onRefresh={onRefresh}  navigation={navigation} />
     </SafeAreaView>
   );
 };
 
+export default HomeScreen;
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  listContent: {
-    paddingHorizontal: 10,
-    paddingBottom: 100,
-  },
-  row: {
-    justifyContent: 'space-between',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 6,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  topRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoutButton: {
-    backgroundColor: 'green',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  logoutText: {
-    color: 'white',
-    fontWeight: 'bold',
+  container: {
+    flex: 1,
   },
 });
 
@@ -152,5 +66,3 @@ const darkStyles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
   },
 });
-
-export default HomeScreen;

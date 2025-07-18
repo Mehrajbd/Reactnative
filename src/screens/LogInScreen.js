@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ const LogInScreen = ({ navigation }) => {
   });
 
   const { clearCart } = useCart();
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data) => {
     try {
@@ -99,7 +100,9 @@ const LogInScreen = ({ navigation }) => {
             onChangeText={onChange}
             secureTextEntry={true}
             error={errors.password?.message}
-            showToggle
+            showToggle={true}
+            showPassword={showPassword}
+            onTogglePress={() => setShowPassword(!showPassword)}
           />
         )}
       />

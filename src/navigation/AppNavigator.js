@@ -10,9 +10,11 @@ import LogInScreen from '../screens/LogInScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CartScreen from '../screens/CartScreen';
+import OrderHistoryScreen from '../screens/OrderHistoryScreen'; 
 
-// Cart Icon
+// Icons
 import CartIcon from '../components/CartIcon';
+import ProfileIcon from '../components/ProfileIcon';
 
 const Stack = createNativeStackNavigator();
 
@@ -51,7 +53,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="Register"
           component={RegisterScreen}
-          options={{ title: 'Welcome To SwiftCart', headerTitleAlign: 'center' }}
+          options={{
+            title: 'Welcome To SwiftCart',
+            headerTitleAlign: 'center',
+          }}
         />
         <Stack.Screen
           name="Login"
@@ -63,8 +68,13 @@ const AppNavigator = () => {
           component={HomeScreen}
           options={{
             headerTitle: '',
-            headerRight: () => <CartIcon />,
-            headerRightContainerStyle: { marginRight: 15 },
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <CartIcon />
+                <ProfileIcon />
+              </View>
+            ),
+            headerRightContainerStyle: { marginRight: 10 },
           }}
         />
         <Stack.Screen
@@ -72,14 +82,24 @@ const AppNavigator = () => {
           component={ProductDetailScreen}
           options={{
             title: 'Product Detail',
-            headerRight: () => <CartIcon />,
-            headerRightContainerStyle: { marginRight: 15 },
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <CartIcon />
+                <ProfileIcon />
+              </View>
+            ),
+            headerRightContainerStyle: { marginRight: 10 },
           }}
         />
         <Stack.Screen
           name="Cart"
           component={CartScreen}
           options={{ title: 'Your Cart' }}
+        />
+        <Stack.Screen
+          name="OrderHistory"
+          component={OrderHistoryScreen}
+          options={{ title: 'Your Orders' }} 
         />
       </Stack.Navigator>
     </NavigationContainer>

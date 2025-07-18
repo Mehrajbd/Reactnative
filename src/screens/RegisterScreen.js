@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,9 @@ const RegisterScreen = ({ navigation }) => {
 
   const passwordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (data) => {
     try {
@@ -113,6 +116,9 @@ const RegisterScreen = ({ navigation }) => {
               secureTextEntry={true}
               inputRef={passwordRef}
               error={errors.password?.message}
+              showToggle={true}
+              showPassword={showPassword}
+              onTogglePress={() => setShowPassword(!showPassword)}
             />
           )}
         />
@@ -129,6 +135,9 @@ const RegisterScreen = ({ navigation }) => {
               secureTextEntry={true}
               inputRef={confirmPasswordRef}
               error={errors.confirmPassword?.message}
+              showToggle={true}
+              showPassword={showConfirmPassword}
+              onTogglePress={() => setShowConfirmPassword(!showConfirmPassword)}
             />
           )}
         />

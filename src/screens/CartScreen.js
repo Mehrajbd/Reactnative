@@ -1,25 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Image,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
 import Toast from 'react-native-toast-message';
+import { createOrder } from '../api/orderApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import CartItemCard from '../components/Cart/CartItemCard';
+import CheckoutModal from '../components/Cart/CheckoutModal';
 
 const CartScreen = () => {
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
+  const [loadingProductId, setLoadingProductId] = useState(null);
+  const [removingProductId, setRemovingProductId] = useState(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('card');
 
   const getTotalPrice = () =>
-    cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    cartItems.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    );
 
   const handleDecrease = async (productId, quantity) => {
     if (quantity > 1) {
+      setLoadingProductId(productId);
       try {
         await updateQuantity(productId, quantity - 1);
         Toast.show({
@@ -36,19 +49,16 @@ const CartScreen = () => {
             error?.message ||
             'Insufficient stock available',
         });
+      } finally {
+        setLoadingProductId(null);
       }
     } else {
-      Alert.alert('Remove Item', 'Do you want to remove this item?', [
-        { text: 'Cancel' },
-        {
-          text: 'Remove',
-          onPress: () => removeFromCart(productId),
-        },
-      ]);
+      handleRemove(productId);
     }
   };
 
   const handleIncrease = async (productId, currentQty) => {
+    setLoadingProductId(productId);
     try {
       await updateQuantity(productId, currentQty + 1);
       Toast.show({
@@ -65,65 +75,76 @@ const CartScreen = () => {
           error?.message ||
           'Insufficient stock available',
       });
+    } finally {
+      setLoadingProductId(null);
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    setRemovingProductId(productId);
+    await removeFromCart(productId);
+    setRemovingProductId(null);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!shippingAddress.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Shipping address is required',
+      });
+      return;
+    }
+
+    setPlacingOrder(true);
+    try {
+      const payload = {
+        shippingAddress: shippingAddress.trim(),
+        paymentMethod,
+      };
+
+      const orderRes = await createOrder(payload);
+
+      const orderedItems = cartItems.map(item => ({
+        productId: item.product._id,
+        quantity: item.quantity,
+      }));
+      const newOrder = {
+        items: orderedItems,
+        date: new Date().toISOString(),
+      };
+
+      const existingHistory = await AsyncStorage.getItem('orderHistory');
+      const parsedHistory = existingHistory ? JSON.parse(existingHistory) : [];
+      parsedHistory.push(newOrder);
+      await AsyncStorage.setItem('orderHistory', JSON.stringify(parsedHistory));
+
+      clearCart();
+      setShowModal(false);
+      setShippingAddress('');
+
+      Toast.show({
+        type: 'success',
+        text1: 'Order Placed Successfully',
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to place order',
+        text2: error?.response?.data?.message || 'Something went wrong',
+      });
+    } finally {
+      setPlacingOrder(false);
     }
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <Image
-        source={{ uri: item.product.image || 'https://via.placeholder.com/150' }}
-        style={styles.backgroundImage}
-        blurRadius={1}
-        resizeMode="cover"
-      />
-      <View style={styles.overlay}>
-        <View style={styles.cardTop}>
-          <Text style={styles.productName}>{item.product.name}</Text>
-          <Text style={styles.productPrice}>
-            ${item.product.price} x {item.quantity}
-          </Text>
-        </View>
-
-        <View style={styles.quantityRow}>
-          <TouchableOpacity
-            style={styles.qtyButton}
-            onPress={() => handleDecrease(item.product._id, item.quantity)}
-          >
-            <Text style={styles.qtyText}>-</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.qtyDisplay}>{item.quantity}</Text>
-
-          <TouchableOpacity
-            style={styles.qtyButton}
-            onPress={() => handleIncrease(item.product._id, item.quantity)}
-          >
-            <Text style={styles.qtyText}>+</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() =>
-              Alert.alert('Remove Item', 'Are you sure?', [
-                { text: 'Cancel' },
-                {
-                  text: 'Remove',
-                  onPress: () => removeFromCart(item.product._id),
-                },
-              ])
-            }
-          >
-            <Text style={styles.removeText}>REMOVE</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+    <CartItemCard
+      item={item} loadingProductId={loadingProductId} removingProductId={removingProductId}  onIncrease={handleIncrease}  onDecrease={handleDecrease}  onRemove={handleRemove}
+ />
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.heading}>Your Cart</Text>
-
       <FlatList
         data={cartItems}
         keyExtractor={(item) => item.product._id}
@@ -140,9 +161,12 @@ const CartScreen = () => {
           <View style={styles.footerButtons}>
             <TouchableOpacity
               style={styles.checkoutBtn}
-              onPress={() => Alert.alert('Checkout', 'Proceeding to checkout...')}
+              onPress={() => setShowModal(true)}
+              disabled={placingOrder}
             >
-              <Text style={styles.checkoutText}>PROCEED TO CHECKOUT</Text>
+              <Text style={styles.checkoutText}>
+                {placingOrder ? 'PLACING ORDER...' : 'PROCEED TO CHECKOUT'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.clearBtn} onPress={clearCart}>
               <Text style={styles.clearText}>CLEAR CART</Text>
@@ -150,6 +174,10 @@ const CartScreen = () => {
           </View>
         </View>
       )}
+
+      <CheckoutModal
+        visible={showModal}  onClose={() => setShowModal(false)}  shippingAddress={shippingAddress}  setShippingAddress={setShippingAddress}  paymentMethod={paymentMethod}  setPaymentMethod={setPaymentMethod}  placingOrder={placingOrder}  onConfirm={handlePlaceOrder}
+      />
 
       <Toast />
     </SafeAreaView>
@@ -159,109 +187,53 @@ const CartScreen = () => {
 export default CartScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  heading: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    alignSelf: 'center',
-  },
-  card: {
-    marginBottom: 16,
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 4,
-    backgroundColor: '#f2f2f2',
-  },
-  backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
-    height: '100%',
-    width: '100%',
-  },
-  overlay: {
-    padding: 12,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  productName: { fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 10 },
-  productPrice: { fontSize: 16, color: '#444' },
-  quantityRow: {
-    flexDirection: 'row',
-    marginTop: 12,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  qtyButton: {
-    backgroundColor: '#1E90FF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 5,
-  },
-  qtyText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  qtyDisplay: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginHorizontal: 8,
-    minWidth: 24,
+  container: { flex: 1, backgroundColor: 'white' },
+  emptyText: {
     textAlign: 'center',
+    marginTop: 40,
+    fontSize: 16,
+    color: 'gray',
   },
-  removeButton: {
-    backgroundColor: 'red',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 5,
-    marginLeft: 'auto',
-  },
-  removeText: { color: '#fff', fontWeight: 'bold' },
   footer: {
     position: 'absolute',
-    bottom: 10,
+    bottom: 0,
     width: '100%',
-    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    padding: 12,
+    borderTopWidth: 1,
+    borderColor: '#ccc',
   },
   totalText: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
     textAlign: 'right',
-    marginBottom: 10,
   },
   footerButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   checkoutBtn: {
+    backgroundColor: '#2e86de',
+    padding: 12,
+    borderRadius: 5,
     flex: 1,
-    backgroundColor: '#1E90FF',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
     marginRight: 8,
   },
-  clearBtn: {
-    flex: 1,
-    backgroundColor: '#999',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
   checkoutText: {
-    color: '#fff',
-    fontSize: 14,
+    color: 'white',
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  clearBtn: {
+    backgroundColor: '#999',
+    padding: 12,
+    borderRadius: 5,
+    flex: 1,
   },
   clearText: {
-    color: '#fff',
-    fontSize: 14,
+    color: 'white',
     fontWeight: 'bold',
-  },
-  emptyText: {
     textAlign: 'center',
-    fontSize: 16,
-    color: '#888',
-    marginTop: 100,
   },
 });
